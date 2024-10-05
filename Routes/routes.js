@@ -5,6 +5,7 @@ const signup = require("../Controllers/signup");
 const login = require("../Controllers/login");
 const logout = require("../Controllers/logout");
 const AuthMiddlewear = require("../middlewear/Auth");
+const { sendingRequest } = require("../Controllers/sendingRequest");
 const {
   updateUserInfo,
   updateUserValidationRules,
@@ -19,5 +20,10 @@ router.patch(
   updateUserInfo
 );
 router.post("/logout", logout);
+router.post(
+  "/sendConnectionRequest/:status/:receiverUserId",
+  AuthMiddlewear,
+  sendingRequest
+);
 
 module.exports = router;
