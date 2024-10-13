@@ -11,6 +11,8 @@ const {
   updateUserValidationRules,
 } = require("../Controllers/updateUserInfo");
 
+const recievingRequest = require("../Controllers/recievingRequest");
+
 router.post("/signup", signup);
 router.post("/login", login);
 router.patch(
@@ -24,6 +26,12 @@ router.post(
   "/sendConnectionRequest/:status/:receiverUserId",
   AuthMiddlewear,
   sendingRequest
+);
+
+router.post(
+  "/RecievingConnectionRequest/:status/:requestId",
+  AuthMiddlewear,
+  recievingRequest
 );
 
 module.exports = router;
