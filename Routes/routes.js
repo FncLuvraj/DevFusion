@@ -12,6 +12,7 @@ const {
 } = require("../Controllers/updateUserInfo");
 
 const recievingRequest = require("../Controllers/recievingRequest");
+const RecievedConnectionRequest = require("../Controllers/recievedConnectionRequest");
 
 router.post("/signup", signup);
 router.post("/login", login);
@@ -32,6 +33,11 @@ router.post(
   "/RecievingConnectionRequest/:status/:requestId",
   AuthMiddlewear,
   recievingRequest
+);
+router.post(
+  "/RecievedConnectionRequest",
+  AuthMiddlewear,
+  RecievedConnectionRequest
 );
 
 module.exports = router;
