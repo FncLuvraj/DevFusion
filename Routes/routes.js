@@ -12,7 +12,7 @@ const {
 } = require("../Controllers/updateUserInfo");
 
 const recievingRequest = require("../Controllers/recievingRequest");
-const RecievedConnectionRequest = require("../Controllers/recievedConnectionRequest");
+const Connections = require("../Controllers/Connections");
 
 router.post("/signup", signup);
 router.post("/login", login);
@@ -34,10 +34,12 @@ router.post(
   AuthMiddlewear,
   recievingRequest
 );
-router.post(
-  "/RecievedConnectionRequest",
-  AuthMiddlewear,
-  RecievedConnectionRequest
-);
+// router.post(
+//   "/RecievedConnectionRequest",
+//   AuthMiddlewear,
+//   RecievedConnectionRequest
+// );
+
+router.post("/Connections", AuthMiddlewear, Connections);
 
 module.exports = router;
