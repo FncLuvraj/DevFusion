@@ -13,6 +13,7 @@ const {
 
 const recievingRequest = require("../Controllers/recievingRequest");
 const Connections = require("../Controllers/Connections");
+const feed = require("../Controllers/feed");
 
 router.post("/signup", signup);
 router.post("/login", login);
@@ -41,5 +42,6 @@ router.post(
 // );
 
 router.post("/Connections", AuthMiddlewear, Connections);
+router.post("/feed", AuthMiddlewear, feed);
 
 module.exports = router;
