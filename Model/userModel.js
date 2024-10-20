@@ -12,6 +12,9 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    profileImagePath: {
+      type: String,
+    },
     email: {
       required: true,
       unique: true,
@@ -26,16 +29,6 @@ const userSchema = new mongoose.Schema(
     skills: {
       required: true,
       type: [String], // array of string
-    },
-    profilePicture: {
-      type: String,
-      validate: {
-        validator: function (v) {
-          // Simple URL validation for the profile picture
-          return /^https?:\/\/[^\s$.?#].[^\s]*$/gm.test(v);
-        },
-        message: (props) => `${props.value} is not a valid URL!`,
-      },
     },
     bio: {
       type: String,

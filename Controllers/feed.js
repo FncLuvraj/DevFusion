@@ -1,47 +1,51 @@
-const ConnectionModel = require("../Model/ConnectionModel");
 const userModel = require("../Model/userModel");
-async function feed(req, res) {
+const ConnectionModel = require("../Model/ConnectionModel");
+
+const USER_SAFE_DATA = "firstName lastName profileImagePath bio skills";
+
+const feed = async (req, res) => {
   try {
-    const loggedInUser = req.user._id;
+    const loggedInUser = req.user; // Get logged-in user
 
-    const page = parseInt(req.query.params) || 1;
-    const limit = parseInt(req.query.params) || 10;
-
-    if (limit > 10) {
-      limit = 10;
-    }
-
+    // Pagination Setup
+    const page = parseInt(req.query.page) || 1;
+    let limit = parseInt(req.query.limit) || 10;
+    limit = limit > 50 ? 50 : limit; // Ensure a max limit of 50 profiles per page
     const skip = (page - 1) * limit;
 
-    const connectionRequest = await ConnectionModel.find({
-      $or: [{ receiverUserId: loggedInUser }, { senderUserId: loggedInUser }],
-    })
-      .select("senderUserId recieverUserId")
-      .populate("senderUserId", ["name"])
-      .populate("receiverUserId", ["name"]);
+    // Step 1: Fetch all connection requests involving the logged-in user (either sent or received)
+    const connectionRequests = await ConnectionModel.find({
+      $or: [
+        { fromUserId: loggedInUser._id }, // Sent requests (including "interested")
+        { toUserId: loggedInUser._id }, // Received requests
+      ],
+    }).select("fromUserId toUserId status"); // Including the status to check for pending/interested/accepted/rejected
 
-    const hideUserFromFeed = new Set();
+    // Step 2: Create a Set to store users to hide (including logged-in user)
+    const hideUsersFromFeed = new Set();
+    hideUsersFromFeed.add(loggedInUser._id.toString()); // Prevent showing own profile
 
-    for (let i = 0; i < connectionRequest.length; i++) {
-      hideUserFromFeed.add(connectionRequest[i].receiverUserId);
-      hideUserFromFeed.add(connectionRequest[i].senderUserId);
-    }
+    // Step 3: Add users who are part of any connection request to the hide list
+    connectionRequests.forEach((request) => {
+      hideUsersFromFeed.add(request.fromUserId.toString()); // Users to whom you've sent requests
+      hideUsersFromFeed.add(request.toUserId.toString()); // Users who sent requests to you
+    });
 
-    const feed = await userModel
+    // Step 4: Find users who are NOT part of the connection set and exclude logged-in user
+    const users = await userModel
       .find({
-        $and: [
-          { _id: { $nin: Array.from(hideUserFromFeed) } },
-          { _id: { $ne: loggedInUser._id } },
-        ],
+        _id: { $nin: Array.from(hideUsersFromFeed) }, // Exclude users involved in any connection requests
       })
-      .select("name email")
+      .select("-password -profilePicture") // Safely select the required fields, excluding sensitive data
       .skip(skip)
       .limit(limit);
 
-    res.send(feed);
+    // Return the filtered users as the feed data
+    res.status(200).json({ success: true, data: users });
   } catch (err) {
-    console.log(err.message);
-    res.status(500).send("Server Error");
+    console.error(err.message);
+    res.status(500).json({ success: false, message: "Server Error" });
   }
-}
+};
+
 module.exports = feed;

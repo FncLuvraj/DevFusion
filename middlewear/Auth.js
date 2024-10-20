@@ -1,30 +1,37 @@
-const userModel = require("../Model/userModel");
 const jwt = require("jsonwebtoken");
 
-async function AuthMiddlewear(req, res, next) {
+const AuthMiddleware = async (req, res, next) => {
   try {
+    // Get the token from cookies
     const token = req.cookies.token;
 
+    // If no token is found, return 401
     if (!token) {
       return res
         .status(401)
-        .json({ success: false, message: "Token not found" });
+        .json({ success: false, message: "No token found" });
     }
 
+    // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
-    const user = await userModel.findById(decoded.userId);
-
-    if (!user) {
-      return res.status(401).json({ success: false, message: "Invalid User" });
+    // If token verification fails, return 401
+    if (!decoded) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Token verification failed" });
     }
 
-    req.user = user;
-    next();
+    // Attach the decoded payload (user info) to req.user
+    req.user = decoded; // Now req.user should have _id and email
+
+    next(); // Pass control to the next middleware or route
   } catch (err) {
     console.log(err.message);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    return res
+      .status(401)
+      .json({ success: false, message: "Unauthorized access" });
   }
-}
+};
 
-module.exports = AuthMiddlewear;
+module.exports = AuthMiddleware;

@@ -23,7 +23,8 @@ async function updateUserInfo(req, res) {
   }
 
   try {
-    const { firstName, lastName, email, skills, bio } = req.body;
+    const { firstName, lastName, email, skills, bio, profileImagePath } =
+      req.body;
 
     const userExist = await userModel.findOne({ email });
     if (!userExist) {
@@ -35,6 +36,8 @@ async function updateUserInfo(req, res) {
     const updatedFields = {};
 
     if (firstName) updatedFields.firstName = firstName;
+    if (email) updatedFields.email = email;
+    if (profileImagePath) updatedFields.profileImagePath = profileImagePath;
     if (lastName) updatedFields.lastName = lastName;
     if (skills) updatedFields.skills = skills;
     if (bio) updatedFields.bio = bio;

@@ -1,16 +1,32 @@
+const Validator = require("custom-data-validator");
 const userModel = require("../Model/userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-async function login(req, res) {
+
+const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    // Validation using custom validator
+    const rules = {
+      email: ["required", "string", "regex:^\\S+@\\S+\\.\\S+$"],
+      password: ["required", "string"],
+    };
+
+    const validator = new Validator(rules);
+    const isValid = validator.validate(req.body);
+
+    if (!isValid) {
       return res
-        .status(401)
-        .json({ success: false, message: "All fields are required" });
+        .status(400)
+        .json({
+          success: false,
+          message: "Validation failed",
+          errors: validator.getErrors(),
+        });
     }
 
+    // Proceed with the login logic
     const userExist = await userModel.findOne({ email });
     if (!userExist) {
       return res
@@ -19,34 +35,36 @@ async function login(req, res) {
     }
 
     const isMatch = await bcrypt.compare(password, userExist.password);
-
     if (!isMatch) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid credentials" });
     }
 
-    const payload = {
-      email: email,
-      userId: userExist._id,
-    };
+    const payload = { email: userExist.email, _id: userExist._id };
     const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, {
-      expiresIn: "1h",
+      expiresIn: "24h",
     });
 
     res.cookie("token", token, {
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production", // Send cookie only over HTTPS in production
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
     });
 
     res
       .status(200)
-      .json({ success: true, message: "User Logged In Successfully" });
+      .json({
+        success: true,
+        message: "User logged in successfully",
+        data: userExist,
+      });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, message: "Error logging-In" });
+    console.log(error.message);
+    res.status(500).json({ success: false, message: "Error logging in" });
   }
-}
+};
+
 module.exports = login;

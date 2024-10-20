@@ -1,6 +1,7 @@
 const ConnectionModel = require("../Model/ConnectionModel");
 
-async function recievingRequest(req, res) {
+// This API allows the logged-in user to accept or reject a specific connection request.
+async function respondToConnection(req, res) {
   try {
     const receiverId = req.user._id; // logged in user
     const requestId = req.params.requestId; // unique ID of the request
@@ -39,4 +40,4 @@ async function recievingRequest(req, res) {
   }
 }
 
-module.exports = recievingRequest;
+module.exports = respondToConnection;

@@ -1,32 +1,39 @@
+const Validator = require("custom-data-validator");
 const ConnectionModel = require("../Model/ConnectionModel");
 const userModel = require("../Model/userModel");
 
 async function sendingRequest(req, res) {
   try {
-    const senderUserId = req.user._id; // current logged in user id passed by middlewear;
-    const receiverUserId = req.params.receiverUserId;
-    const status = req.params.status;
+    const { receiverUserId, status } = req.params;
 
-    // validating status
-    const allowedStatus = ["interested", "ignored"];
+    // Validation using custom validator
+    const rules = {
+      receiverUserId: ["required", "string"], // Assume ID is a string
+      status: ["required", "string", "regex:^(interested|ignored)$"], // Only allow "interested" or "ignored"
+    };
 
-    if (!allowedStatus.includes(status)) {
+    const validator = new Validator(rules);
+    const isValid = validator.validate(req.params);
+
+    if (!isValid) {
       return res
         .status(400)
-        .json({ success: false, message: "invalid status" });
+        .json({
+          success: false,
+          message: "Validation failed",
+          errors: validator.getErrors(),
+        });
     }
 
-    // validating toUserid
-
+    // Proceed with the logic to send a connection request
+    const senderUserId = req.user._id;
     const receiverUserExist = await userModel.findById(receiverUserId);
 
     if (!receiverUserExist) {
       return res
         .status(400)
-        .json({ success: false, message: "reciever user does not exist" });
+        .json({ success: false, message: "Receiver user does not exist" });
     }
-
-    // checking if connection already exist
 
     const connectionExist = await ConnectionModel.findOne({
       $or: [
@@ -38,22 +45,19 @@ async function sendingRequest(req, res) {
     if (connectionExist) {
       return res
         .status(400)
-        .json({ success: false, message: "Connection already exist" });
+        .json({ success: false, message: "Connection already exists" });
     }
 
-    // if connection does not exist
-
     const newConnection = new ConnectionModel({
-      senderUserId: senderUserId,
-      receiverUserId: receiverUserId,
-      status: status,
+      senderUserId,
+      receiverUserId,
+      status,
     });
-
     await newConnection.save();
 
     res
       .status(200)
-      .json({ success: true, message: "Connection request successfull" });
+      .json({ success: true, message: "Connection request successful" });
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ success: false, message: "Internal Server Error" });
